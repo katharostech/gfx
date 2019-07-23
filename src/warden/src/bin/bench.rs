@@ -4,7 +4,8 @@
         feature = "dx12",
         feature = "dx11",
         feature = "metal",
-        feature = "gl"
+        feature = "gl",
+        feature = "wgl",
     )),
     allow(dead_code)
 )]
@@ -172,7 +173,7 @@ fn main() {
     {
         harness.run::<gfx_backend_metal::Backend>("Metal", Disabilities::default());
     }
-    #[cfg(feature = "gl")]
+    #[cfg(any(feature = "gl", feature = "wgl"))]
     {
         harness.run::<gfx_backend_gl::Backend>("GL", Disabilities::default());
     }
@@ -181,7 +182,8 @@ fn main() {
         feature = "dx12",
         feature = "dx11",
         feature = "metal",
-        feature = "gl"
+        feature = "gl",
+        feature = "wgl",
     )))]
     {
         println!("No backend selected!");

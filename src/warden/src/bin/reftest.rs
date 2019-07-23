@@ -4,7 +4,8 @@
         feature = "dx12",
         feature = "dx11",
         feature = "metal",
-        feature = "gl"
+        feature = "gl",
+        feature = "wgl",
     )),
     allow(dead_code)
 )]
@@ -210,7 +211,7 @@ fn main() {
     {
         num_failures += harness.run::<gfx_backend_metal::Backend>("Metal", Disabilities::default());
     }
-    #[cfg(feature = "gl")]
+    #[cfg(any(feature = "gl", feature = "wgl"))]
     {
         num_failures += harness.run::<gfx_backend_gl::Backend>("GL", Disabilities::default());
     }
