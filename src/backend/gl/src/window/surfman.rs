@@ -20,7 +20,7 @@ pub struct Swapchain {
     pub(crate) extent: window::Extent2D,
     ///
     pub(crate) fbos: ArrayVec<[native::RawFrameBuffer; 3]>,
-    pub(crate) out_fbo: Option<native::RawFrameBuffer>,
+    // pub(crate) out_fbo: Option<native::RawFrameBuffer>,
 }
 
 impl window::Swapchain<B> for Swapchain {
@@ -84,7 +84,7 @@ impl Instance {
             .expect("TODO");
 
         // Create context
-        let context = device.create_context(&context_descriptor).expect("TODO");
+        let mut context = device.create_context(&context_descriptor).expect("TODO");
 
         // Create the surface with the context
         let surface = device
@@ -102,12 +102,19 @@ impl Instance {
             )
             .expect("TODO");
 
+        // Bind surface to context
+        device
+            .bind_surface_to_context(&mut context, surface)
+            .expect("TODO");
+
+        device.make_context_current(&context).unwrap();
+
         // Create a surface with the given context
         Surface {
             renderbuffer: None,
             swapchain: None,
             context: Starc::new(RwLock::new(context)),
-            surface: Starc::new(RwLock::new(surface)),
+            // surface: Starc::new(RwLock::new(surface)),
             device: Starc::new(RwLock::new(device)),
         }
     }
@@ -191,7 +198,7 @@ impl hal::Instance<B> for Instance {
 pub struct Surface {
     pub(crate) swapchain: Option<Swapchain>,
     pub(crate) context: Starc<RwLock<sm::Context>>,
-    surface: Starc<RwLock<sm::Surface>>,
+    // surface: Starc<RwLock<sm::Surface>>,
     device: Starc<RwLock<sm::Device>>,
     renderbuffer: Option<native::Renderbuffer>,
 }
@@ -210,11 +217,20 @@ impl Surface {
 
 impl Drop for Surface {
     fn drop(&mut self) {
-        // Destroy the underlying surface
-        self.device
+        // Unbind and get the underlying surface from the context
+        let surface = self
+            .device
             .read()
-            .destroy_surface(&mut self.context.write(), &mut self.surface.write())
+            .unbind_surface_from_context(&mut self.context.write())
             .expect("TODO");
+
+        if let Some(mut surface) = surface {
+            // Destroy the underlying surface
+            self.device
+                .read()
+                .destroy_surface(&mut self.context.write(), &mut surface)
+                .expect("TODO");
+        }
     }
 }
 
@@ -227,7 +243,7 @@ impl window::PresentationSurface<B> for Surface {
         config: window::SwapchainConfig,
     ) -> Result<(), window::CreationError> {
         let gl = &device.share.context;
-        let surface_info = self.device.read().surface_info(&self.surface.read());
+        // let surface_info = self.device.read().surface_info(&self.surface.read());
 
         if let Some(old) = self.swapchain.take() {
             for fbo in old.fbos {
@@ -261,7 +277,7 @@ impl window::PresentationSurface<B> for Surface {
             context: self.context.clone(),
             extent: config.extent,
             fbos: iter::once(fbo).collect(),
-            out_fbo: Some(surface_info.framebuffer_object),
+            // out_fbo: Some(surface_info.framebuffer_object),
         });
 
         Ok(())
@@ -303,7 +319,7 @@ impl window::Surface<B> for Surface {
             // } else {
             //     1..=1
             // },
-            image_count: 1..=1,
+            image_count: 2..=2,
             current_extent: None,
             extents: window::Extent2D {
                 width: 4,

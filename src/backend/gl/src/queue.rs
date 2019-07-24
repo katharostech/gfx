@@ -205,9 +205,8 @@ impl CommandQueue {
         swapchain.make_current();
 
         unsafe {
-            trace!("Out FBO: {:?}", swapchain.out_fbo);
             gl.bind_framebuffer(glow::READ_FRAMEBUFFER, Some(swapchain.fbos[index as usize]));
-            gl.bind_framebuffer(glow::DRAW_FRAMEBUFFER, swapchain.out_fbo);
+            gl.bind_framebuffer(glow::DRAW_FRAMEBUFFER, None);
             gl.blit_framebuffer(
                 0,
                 0,
