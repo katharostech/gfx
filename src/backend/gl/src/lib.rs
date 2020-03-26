@@ -91,15 +91,9 @@ pub(crate) struct GlContainer {
 impl GlContainer {
     #[cfg(not(target_arch = "wasm32"))]
     fn make_current(&self) {
-        // TODO: Implement `make_current()` for other backends
-
-        #[cfg(feature = "surfman")]
-        {
-            self.surfman_device
-                .write()
-                .make_context_current(&self.surfman_context.read())
-                .expect("TODO");
-        }
+        // TODO:
+        // NOTE: Beware, calling this on dereference breaks the surfman backend
+        // I'm not sure if there would be similar concequences with other backends.
     }
 
     #[cfg(not(any(target_arch = "wasm32", feature = "surfman")))]

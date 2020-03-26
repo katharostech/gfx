@@ -1956,7 +1956,6 @@ impl d::Device<B> for Device {
             extent: config.extent,
             // TODO: Resize the context to the extent
             context: surface.context.clone(),
-            // out_fbo: None,
         };
 
         // WGL

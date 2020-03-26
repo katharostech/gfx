@@ -20,7 +20,6 @@ pub struct Swapchain {
     pub(crate) extent: window::Extent2D,
     ///
     pub(crate) fbos: ArrayVec<[native::RawFrameBuffer; 3]>,
-    // pub(crate) out_fbo: Option<native::RawFrameBuffer>,
 }
 
 impl window::Swapchain<B> for Swapchain {
@@ -107,14 +106,13 @@ impl Instance {
             .bind_surface_to_context(&mut context, surface)
             .expect("TODO");
 
-        device.make_context_current(&context).unwrap();
+        device.make_context_current(&context).expect("TODO");
 
         // Create a surface with the given context
         Surface {
             renderbuffer: None,
             swapchain: None,
             context: Starc::new(RwLock::new(context)),
-            // surface: Starc::new(RwLock::new(surface)),
             device: Starc::new(RwLock::new(device)),
         }
     }
@@ -137,8 +135,9 @@ impl hal::Instance<B> for Instance {
 
         for surfman_adapter in &[
             &self.hardware_adapter,
-            &self.low_power_adapter,
-            &self.software_adapter,
+            // TODO: Enabling these causes a segfault for an unknown reason
+            // &self.low_power_adapter,
+            // &self.software_adapter,
         ] {
             // Create a surfman device
             let mut device =
@@ -198,7 +197,6 @@ impl hal::Instance<B> for Instance {
 pub struct Surface {
     pub(crate) swapchain: Option<Swapchain>,
     pub(crate) context: Starc<RwLock<sm::Context>>,
-    // surface: Starc<RwLock<sm::Surface>>,
     device: Starc<RwLock<sm::Device>>,
     renderbuffer: Option<native::Renderbuffer>,
 }

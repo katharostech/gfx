@@ -204,9 +204,35 @@ impl CommandQueue {
         #[cfg(feature = "wgl")]
         swapchain.make_current();
 
+        #[cfg(feature = "surfman")]
+        gl.surfman_device
+            .write()
+            .make_context_current(&swapchain.context.read())
+            .unwrap();
+
+        // Use framebuffer 0
+        #[cfg(not(feature = "surfman"))]
+        let fbo = 0;
+
+        // Use the framebuffer from the surfman context
+        #[cfg(feature = "surfman")]
+        let fbo = gl
+            .surfman_device
+            .read()
+            .context_surface_info(&swapchain.context.read())
+            .unwrap()
+            .unwrap()
+            .framebuffer_object;
+
         unsafe {
             gl.bind_framebuffer(glow::READ_FRAMEBUFFER, Some(swapchain.fbos[index as usize]));
-            gl.bind_framebuffer(glow::DRAW_FRAMEBUFFER, None);
+            gl.bind_framebuffer(
+                glow::DRAW_FRAMEBUFFER,
+                match fbo {
+                    0 => None,
+                    other => Some(other),
+                },
+            );
             gl.blit_framebuffer(
                 0,
                 0,
@@ -219,6 +245,25 @@ impl CommandQueue {
                 glow::COLOR_BUFFER_BIT,
                 glow::LINEAR,
             );
+        }
+
+        // Present the surfman surface
+        #[cfg(feature = "surfman")]
+        {
+            let mut surface = gl
+                .surfman_device
+                .read()
+                .unbind_surface_from_context(&mut swapchain.context.write())
+                .expect("TODO")
+                .expect("TODO");
+            gl.surfman_device
+                .read()
+                .present_surface(&gl.surfman_context.read(), &mut surface)
+                .expect("TODO");
+            gl.surfman_device
+                .read()
+                .bind_surface_to_context(&mut swapchain.context.write(), surface)
+                .expect("TODO")
         }
 
         #[cfg(feature = "glutin")]
