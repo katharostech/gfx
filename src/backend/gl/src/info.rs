@@ -355,7 +355,7 @@ pub(crate) fn query_all(gl: &GlContainer) -> (Info, Features, LegacyFeatures, Li
     let min_storage_buffer_offset_alignment = if IS_WEBGL {
         1024
     } else {
-        get_u64(gl, glow::SHADER_STORAGE_BUFFER_OFFSET_ALIGNMENT).unwrap_or(1024)
+        get_u64(gl, glow::SHADER_STORAGE_BUFFER_OFFSET_ALIGNMENT).unwrap_or(256)
     };
 
     let mut limits = Limits {
