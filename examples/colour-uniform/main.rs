@@ -105,18 +105,6 @@ const COLOR_RANGE: i::SubresourceRange = i::SubresourceRange {
     layers: 0 .. 1,
 };
 
-trait SurfaceTrait {
-    #[cfg(feature = "gl")]
-    fn get_context_t(&self) -> &back::glutin::RawContext<back::glutin::PossiblyCurrent>;
-}
-
-impl SurfaceTrait for <back::Backend as Backend>::Surface {
-    #[cfg(feature = "gl")]
-    fn get_context_t(&self) -> &back::glutin::RawContext<back::glutin::PossiblyCurrent> {
-        self.context()
-    }
-}
-
 struct RendererState<B: Backend> {
     uniform_desc_pool: Option<B::DescriptorPool>,
     img_desc_pool: Option<B::DescriptorPool>,
@@ -344,10 +332,7 @@ impl<B: Backend> RendererState<B> {
         }
     }
 
-    fn draw(&mut self)
-    where
-        B::Surface: SurfaceTrait,
-    {
+    fn draw(&mut self) {
         if self.recreate_swapchain {
             self.recreate_swapchain();
             self.recreate_swapchain = false;
@@ -571,49 +556,24 @@ impl<B: Backend> Drop for BackendState<B> {
     feature = "vulkan",
     feature = "dx11",
     feature = "dx12",
-    feature = "metal"
+    feature = "metal",
+    feature = "gl",
 ))]
 fn create_backend(
     wb: winit::window::WindowBuilder,
     event_loop: &winit::event_loop::EventLoop<()>,
 ) -> BackendState<back::Backend> {
     let window = wb.build(event_loop).unwrap();
-    let instance = back::Instance::create("gfx-rs colour-uniform", 1)
-        .expect("Failed to create an instance!");
+    let instance =
+        back::Instance::create("gfx-rs colour-uniform", 1).expect("Failed to create an instance!");
     let surface = unsafe {
-        instance.create_surface(&window).expect("Failed to create a surface!")
+        instance
+            .create_surface(&window)
+            .expect("Failed to create a surface!")
     };
     let mut adapters = instance.enumerate_adapters();
     BackendState {
         instance: Some(instance),
-        adapter: AdapterState::new(&mut adapters),
-        surface: ManuallyDrop::new(surface),
-        window,
-    }
-}
-
-#[cfg(feature = "gl")]
-fn create_backend(
-    wb: winit::window::WindowBuilder,
-    event_loop: &winit::event_loop::EventLoop<()>,
-) -> BackendState<back::Backend> {
-    let (context, window) = {
-        let builder =
-            back::config_context(back::glutin::ContextBuilder::new(), ColorFormat::SELF, None)
-                .with_vsync(true);
-        let windowed_context = builder.build_windowed(wb, event_loop).unwrap();
-        unsafe {
-            windowed_context
-                .make_current()
-                .expect("Unable to make context current")
-                .split()
-        }
-    };
-
-    let surface = back::Surface::from_context(context);
-    let mut adapters = surface.enumerate_adapters();
-    BackendState {
-        instance: None,
         adapter: AdapterState::new(&mut adapters),
         surface: ManuallyDrop::new(surface),
         window,
@@ -774,7 +734,9 @@ impl<B: Backend> BufferState<B> {
                 .enumerate()
                 .position(|(id, mem_type)| {
                     mem_req.type_mask & (1 << id) != 0
-                        && mem_type.properties.contains(m::Properties::CPU_VISIBLE | m::Properties::COHERENT)
+                        && mem_type
+                            .properties
+                            .contains(m::Properties::CPU_VISIBLE | m::Properties::COHERENT)
                 })
                 .unwrap()
                 .into();
@@ -845,7 +807,9 @@ impl<B: Backend> BufferState<B> {
                 .enumerate()
                 .position(|(id, mem_type)| {
                     mem_reqs.type_mask & (1 << id) != 0
-                        && mem_type.properties.contains(m::Properties::CPU_VISIBLE | m::Properties::COHERENT)
+                        && mem_type
+                            .properties
+                            .contains(m::Properties::CPU_VISIBLE | m::Properties::COHERENT)
                 })
                 .unwrap()
                 .into();
@@ -857,8 +821,8 @@ impl<B: Backend> BufferState<B> {
             // copy image data into staging buffer
             let mapping = device.map_memory(&memory, 0 .. size).unwrap();
             for y in 0 .. height as usize {
-                let data_source_slice = &(**img)
-                    [y * (width as usize) * stride .. (y + 1) * (width as usize) * stride];
+                let data_source_slice =
+                    &(**img)[y * (width as usize) * stride .. (y + 1) * (width as usize) * stride];
                 ptr::copy_nonoverlapping(
                     data_source_slice.as_ptr(),
                     mapping.offset(y as isize * row_pitch as isize),
@@ -1352,8 +1316,12 @@ struct SwapchainState<B: Backend> {
 
 impl<B: Backend> SwapchainState<B> {
     unsafe fn new(backend: &mut BackendState<B>, device: Rc<RefCell<DeviceState<B>>>) -> Self {
-        let caps = backend.surface.capabilities(&device.borrow().physical_device);
-        let formats = backend.surface.supported_formats(&device.borrow().physical_device);
+        let caps = backend
+            .surface
+            .capabilities(&device.borrow().physical_device);
+        let formats = backend
+            .surface
+            .supported_formats(&device.borrow().physical_device);
         println!("formats: {:?}", formats);
         let format = formats.map_or(f::Format::Rgba8Srgb, |formats| {
             formats
@@ -1638,12 +1606,6 @@ fn main() {
                         *control_flow = winit::event_loop::ControlFlow::Exit
                     }
                     winit::event::WindowEvent::Resized(dims) => {
-                        #[cfg(feature = "gl")]
-                        renderer_state
-                            .backend
-                            .surface
-                            .get_context_t()
-                            .resize(dims.to_physical(renderer_state.backend.window.hidpi_factor()));
                         println!("RESIZE EVENT");
                         renderer_state.recreate_swapchain = true;
                     }
@@ -1666,7 +1628,7 @@ fn main() {
             }
             winit::event::Event::RedrawRequested(_) => {
                 println!("RedrawRequested");
-                        renderer_state.draw();
+                renderer_state.draw();
             }
             winit::event::Event::RedrawEventsCleared => {
                 renderer_state.backend.window.request_redraw();

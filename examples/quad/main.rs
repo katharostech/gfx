@@ -113,10 +113,12 @@ fn main() {
     // instantiate backend
     let (_window, instance, mut adapters, surface) = {
         let window = wb.build(&event_loop).unwrap();
-        let instance = back::Instance::create("gfx-rs quad", 1)
-            .expect("Failed to create an instance!");
+        let instance =
+            back::Instance::create("gfx-rs quad", 1).expect("Failed to create an instance!");
         let surface = unsafe {
-            instance.create_surface(&window).expect("Failed to create a surface!")
+            instance
+                .create_surface(&window)
+                .expect("Failed to create a surface!")
         };
         let adapters = instance.enumerate_adapters();
         // Return `window` so it is not dropped: dropping it invalidates `surface`.
@@ -207,7 +209,7 @@ where
     fn new(
         instance: Option<B::Instance>,
         mut surface: B::Surface,
-        adapter: hal::adapter::Adapter<B>
+        adapter: hal::adapter::Adapter<B>,
     ) -> Renderer<B> {
         let memory_types = adapter.physical_device.memory_properties().memory_types;
         let limits = adapter.physical_device.limits();
@@ -289,7 +291,9 @@ where
         let buffer_stride = mem::size_of::<Vertex>() as u64;
         let buffer_len = QUAD.len() as u64 * buffer_stride;
         assert_ne!(buffer_len, 0);
-        let padded_buffer_len = ((buffer_len + non_coherent_alignment - 1) / non_coherent_alignment) * non_coherent_alignment;
+        let padded_buffer_len = ((buffer_len + non_coherent_alignment - 1)
+            / non_coherent_alignment)
+            * non_coherent_alignment;
 
         let mut vertex_buffer = ManuallyDrop::new(
             unsafe { device.create_buffer(padded_buffer_len, buffer::Usage::VERTEX) }.unwrap(),
@@ -312,11 +316,17 @@ where
 
         // TODO: check transitions: read/write mapping and vertex buffer read
         let buffer_memory = unsafe {
-            let memory = device.allocate_memory(upload_type, buffer_req.size).unwrap();
-            device.bind_buffer_memory(&memory, 0, &mut vertex_buffer).unwrap();
+            let memory = device
+                .allocate_memory(upload_type, buffer_req.size)
+                .unwrap();
+            device
+                .bind_buffer_memory(&memory, 0, &mut vertex_buffer)
+                .unwrap();
             let mapping = device.map_memory(&memory, 0 .. padded_buffer_len).unwrap();
             ptr::copy_nonoverlapping(QUAD.as_ptr() as *const u8, mapping, buffer_len as usize);
-            device.flush_mapped_memory_ranges(iter::once((&memory, 0 .. padded_buffer_len))).unwrap();
+            device
+                .flush_mapped_memory_ranges(iter::once((&memory, 0 .. padded_buffer_len)))
+                .unwrap();
             device.unmap_memory(&memory);
             ManuallyDrop::new(memory)
         };
@@ -333,17 +343,24 @@ where
         let image_stride = 4usize;
         let row_pitch = (width * image_stride as u32 + row_alignment_mask) & !row_alignment_mask;
         let upload_size = (height * row_pitch) as u64;
-        let padded_upload_size = ((upload_size + non_coherent_alignment - 1) / non_coherent_alignment) * non_coherent_alignment;
+        let padded_upload_size = ((upload_size + non_coherent_alignment - 1)
+            / non_coherent_alignment)
+            * non_coherent_alignment;
 
         let mut image_upload_buffer = ManuallyDrop::new(
-            unsafe { device.create_buffer(padded_upload_size, buffer::Usage::TRANSFER_SRC) }.unwrap(),
+            unsafe { device.create_buffer(padded_upload_size, buffer::Usage::TRANSFER_SRC) }
+                .unwrap(),
         );
         let image_mem_reqs = unsafe { device.get_buffer_requirements(&image_upload_buffer) };
 
         // copy image data into staging buffer
         let image_upload_memory = unsafe {
-            let memory = device.allocate_memory(upload_type, image_mem_reqs.size).unwrap();
-            device.bind_buffer_memory(&memory, 0, &mut image_upload_buffer).unwrap();
+            let memory = device
+                .allocate_memory(upload_type, image_mem_reqs.size)
+                .unwrap();
+            device
+                .bind_buffer_memory(&memory, 0, &mut image_upload_buffer)
+                .unwrap();
             let mapping = device.map_memory(&memory, 0 .. padded_upload_size).unwrap();
             for y in 0 .. height as usize {
                 let row = &(*img)[y * (width as usize) * image_stride
@@ -354,7 +371,9 @@ where
                     width as usize * image_stride,
                 );
             }
-            device.flush_mapped_memory_ranges(iter::once((&memory, 0 .. padded_upload_size))).unwrap();
+            device
+                .flush_mapped_memory_ranges(iter::once((&memory, 0 .. padded_upload_size)))
+                .unwrap();
             device.unmap_memory(&memory);
             ManuallyDrop::new(memory)
         };
@@ -582,14 +601,9 @@ where
                     .create_semaphore()
                     .expect("Could not create semaphore"),
             );
-            submission_complete_fences.push(
-                device
-                    .create_fence(true)
-                    .expect("Could not create fence"),
-            );
-            cmd_buffers.push(unsafe {
-                cmd_pools[i].allocate_one(command::Level::Primary)
-            });
+            submission_complete_fences
+                .push(device.create_fence(true).expect("Could not create fence"));
+            cmd_buffers.push(unsafe { cmd_pools[i].allocate_one(command::Level::Primary) });
         }
 
         let pipeline_layout = ManuallyDrop::new(
@@ -891,8 +905,7 @@ where
             }
             self.device
                 .destroy_render_pass(ManuallyDrop::into_inner(ptr::read(&self.render_pass)));
-            self.surface
-              .unconfigure_swapchain(&self.device);
+            self.surface.unconfigure_swapchain(&self.device);
             self.device
                 .free_memory(ManuallyDrop::into_inner(ptr::read(&self.buffer_memory)));
             self.device

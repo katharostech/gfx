@@ -212,33 +212,7 @@ fn main() {
     }
     #[cfg(feature = "gl")]
     {
-        use gfx_backend_gl::glutin;
-        println!("Testing GL:");
-        let events_loop = glutin::event_loop::EventLoop::new();
-        let windowed_context = glutin::ContextBuilder::new()
-            .with_gl_profile(glutin::GlProfile::Core)
-            .build_windowed(glutin::window::WindowBuilder::new(), &events_loop)
-            .unwrap();
-        let (context, _window) = unsafe {
-            windowed_context
-                .make_current()
-                .expect("Unable to make window current")
-                .split()
-        };
-        let instance = gfx_backend_gl::Surface::from_context(context);
-        num_failures += harness.run_instance(instance, Disabilities::default());
-    }
-    #[cfg(feature = "gl-headless")]
-    {
-        use gfx_backend_gl::glutin;
-        println!("Testing GL headless:");
-        let events_loop = glutin::event_loop::EventLoop::new();
-        let context = glutin::ContextBuilder::new()
-            .build_headless(&events_loop, glutin::dpi::PhysicalSize::new(0.0, 0.0))
-            .unwrap();
-        let context = unsafe { context.make_current() }.expect("Unable to make context current");
-        let instance = gfx_backend_gl::Headless::from_context(context);
-        num_failures += harness.run_instance(instance, Disabilities::default());
+        num_failures += harness.run::<gfx_backend_gl::Backend>("GL", Disabilities::default());
     }
     let _ = harness;
     num_failures += 0; // mark as mutated
