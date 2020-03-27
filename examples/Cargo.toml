@@ -6,13 +6,16 @@ workspace = ".."
 edition = "2018"
 
 [features]
-default = []
+default = ["debug-assertions"]
 metal = ["gfx-backend-metal"]
-gl = ["gfx-backend-gl", "gfx-backend-gl/surfman"]
+gl = ["gfx-backend-gl", "gfx-backend-gl/glutin"]
 wgl = ["gfx-backend-gl", "gfx-backend-gl/wgl"]
 dx11 = ["gfx-backend-dx11"]
 dx12 = ["gfx-backend-dx12"]
 vulkan = ["gfx-backend-vulkan"]
+# this is necessary because cargo doesn't allow using `target.'cfg(debug-assertions)'.dependencies`
+# to conditionally include crates
+debug-assertions = ["env_logger"]
 unstable = []
 
 [[bin]]
@@ -33,9 +36,7 @@ log = "0.4"
 hal = { path = "../src/hal", version = "0.4", package = "gfx-hal" }
 gfx-backend-empty = { path = "../src/backend/empty", version = "0.4" }
 winit = { version = "=0.20.0-alpha6", features = ["web-sys"] }
-
-[target.'cfg(debug_assertions)'.dependencies]
-env_logger = "0.6"
+env_logger = { version = "0.6", optional = true }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 glsl-to-spirv = "0.1.4"

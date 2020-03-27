@@ -18,6 +18,7 @@ extern crate bitflags;
 extern crate log;
 extern crate gfx_hal as hal;
 
+#[cfg(feature = "surfman")]
 use parking_lot::RwLock;
 
 use std::cell::Cell;
@@ -96,7 +97,7 @@ impl GlContainer {
         // I'm not sure if there would be similar concequences with other backends.
     }
 
-    #[cfg(not(any(target_arch = "wasm32", feature = "surfman")))]
+    #[cfg(any(feature = "glutin", feature = "wgl"))]
     fn from_fn_proc<F>(fn_proc: F) -> GlContainer
     where
         F: FnMut(&str) -> *const std::os::raw::c_void,

@@ -42,7 +42,10 @@ thread_local! {
 
 pub struct Instance {
     hardware_adapter: sm::Adapter,
+    // TODO: We're not using these yet, but leave them here for later
+    #[allow(dead_code)]
     low_power_adapter: sm::Adapter,
+    #[allow(dead_code)]
     software_adapter: sm::Adapter,
 }
 
