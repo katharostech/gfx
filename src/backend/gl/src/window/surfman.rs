@@ -232,6 +232,12 @@ impl Drop for Surface {
                 .destroy_surface(&mut self.context.write(), &mut surface)
                 .expect("TODO");
         }
+
+        // Destroy the backing context
+        self.device
+            .read()
+            .destroy_context(&mut self.context.write())
+            .expect("TODO");
     }
 }
 
