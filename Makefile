@@ -49,7 +49,12 @@ help:
 check:
 	@echo "Note: excluding \`warden\` here, since it depends on serialization"
 	cargo check --all $(CHECK_TARGET_FLAG) $(EXCLUDES) --exclude gfx-warden
-	cd examples && cargo check $(CHECK_TARGET_FLAG) --features "gl"
+ifeq ($(OS),Windows_NT)
+		cd examples && cargo check $(CHECK_TARGET_FLAG) --features "wgl"
+endif
+ifeq ($(UNAME_S),Linux)
+		cd examples && cargo check $(CHECK_TARGET_FLAG) --features "gl"
+endif
 	cd examples && cargo check $(CHECK_TARGET_FLAG) --features "$(FEATURES_HAL)"
 	cd examples && cargo check $(CHECK_TARGET_FLAG) --features "$(FEATURES_HAL2)"
 	cd examples && cargo check $(CHECK_TARGET_FLAG) --features "$(FEATURES_HAL3)"
@@ -76,7 +81,7 @@ quad:
 	cd examples && cargo run --bin quad --features ${FEATURES_HAL}
 
 quad-wasm:
-	cd examples && cargo +nightly build --target wasm32-unknown-unknown --features gl --bin quad && wasm-bindgen ../target/wasm32-unknown-unknown/debug/quad.wasm --out-dir ../examples/generated-wasm --web
+	cd examples && cargo +nightly build --target wasm32-unknown-unknown --features webgl --bin quad && wasm-bindgen ../target/wasm32-unknown-unknown/debug/quad.wasm --out-dir ../examples/generated-wasm --web
 
 shader-binaries:
 ifeq ($(UNAME_S),Darwin)
