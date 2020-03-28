@@ -35,7 +35,8 @@ else
 		FEATURES_HAL=vulkan
 	endif
 	ifeq ($(TARGET),aarch64-apple-ios)
-		EXCLUDES+= --exclude gfx-backend-vulkan
+		GL_FEATURES=
+		EXCLUDES+= --exclude gfx-backend-vulkan --exclude gfx-backend-gl
 	endif
 	ifeq ($(UNAME_S),Darwin)
 		FEATURES_HAL=metal
