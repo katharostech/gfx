@@ -14,7 +14,7 @@
 extern crate gfx_backend_dx11 as back;
 #[cfg(feature = "dx12")]
 extern crate gfx_backend_dx12 as back;
-#[cfg(any(feature = "gl", feature = "wgl"))]
+#[cfg(any(feature = "gl", feature = "wgl", feature = "webgl"))]
 extern crate gfx_backend_gl as back;
 #[cfg(feature = "metal")]
 extern crate gfx_backend_metal as back;
@@ -91,7 +91,8 @@ const COLOR_RANGE: i::SubresourceRange = i::SubresourceRange {
     feature = "dx12",
     feature = "metal",
     feature = "gl",
-    feature = "wgl"
+    feature = "wgl",
+    feature = "webgl",
 ))]
 fn main() {
     #[cfg(target_arch = "wasm32")]
@@ -111,6 +112,7 @@ fn main() {
         .with_title("quad".to_string());
 
     // instantiate backend
+    #[cfg(not(target_arch = "wasm32"))]
     let (_window, instance, mut adapters, surface) = {
         let window = wb.build(&event_loop).unwrap();
         let instance =
@@ -123,6 +125,26 @@ fn main() {
         let adapters = instance.enumerate_adapters();
         // Return `window` so it is not dropped: dropping it invalidates `surface`.
         (window, Some(instance), adapters, surface)
+    };
+
+    #[cfg(target_arch = "wasm32")]
+    let (_window, instance, mut adapters, surface) = {
+        let (window, surface) = {
+            let window = wb.build(&event_loop).unwrap();
+            web_sys::window()
+                .unwrap()
+                .document()
+                .unwrap()
+                .body()
+                .unwrap()
+                .append_child(&winit::platform::web::WindowExtWebSys::canvas(&window))
+                .unwrap();
+            let surface = back::Surface::from_raw_handle(&window);
+            (window, surface)
+        };
+
+        let adapters = surface.enumerate_adapters();
+        (window, None, adapters, surface)
     };
 
     for adapter in &adapters {
@@ -934,8 +956,9 @@ where
     feature = "dx12",
     feature = "metal",
     feature = "gl",
-    feature = "wgl"
+    feature = "wgl",
+    feature = "webgl",
 )))]
 fn main() {
-    println!("You need to enable the native API feature (vulkan/metal/dx11/dx12/gl/wgl) in order to run the example");
+    println!("You need to enable the native API feature (vulkan/metal/dx11/dx12/gl/wgl/webgl) in order to run the example");
 }

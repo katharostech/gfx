@@ -8,8 +8,9 @@ edition = "2018"
 [features]
 default = ["debug-assertions"]
 metal = ["gfx-backend-metal"]
-gl = ["gfx-backend-gl", "gfx-backend-gl/surfman"]
-wgl = ["gfx-backend-gl", "gfx-backend-gl/wgl"]
+gl = ["gfx-backend-gl", "gfx-backend-gl/surfman"] # GL for Linux
+webgl = ["gfx-backend-gl"] # GL for web
+wgl = ["gfx-backend-gl", "gfx-backend-gl/wgl"] # GL for Windows
 dx11 = ["gfx-backend-dx11"]
 dx12 = ["gfx-backend-dx12"]
 vulkan = ["gfx-backend-vulkan"]
@@ -37,14 +38,10 @@ hal = { path = "../src/hal", version = "0.4", package = "gfx-hal" }
 gfx-backend-empty = { path = "../src/backend/empty", version = "0.4" }
 winit = { version = "=0.20.0-alpha6", features = ["web-sys"] }
 env_logger = { version = "0.6", optional = true }
+gfx-backend-gl = { path = "../src/backend/gl", version = "0.4", optional = true }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 glsl-to-spirv = "0.1.4"
-
-[dependencies.gfx-backend-gl]
-path = "../src/backend/gl"
-version = "0.4"
-optional = true
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 wasm-bindgen = "0.2.51"

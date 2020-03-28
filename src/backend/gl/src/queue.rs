@@ -210,10 +210,6 @@ impl CommandQueue {
             .make_context_current(&swapchain.context.read())
             .unwrap();
 
-        // Use framebuffer 0
-        #[cfg(not(feature = "surfman"))]
-        let fbo = 0;
-
         // Use the framebuffer from the surfman context
         #[cfg(feature = "surfman")]
         let fbo = gl
@@ -228,10 +224,13 @@ impl CommandQueue {
             gl.bind_framebuffer(glow::READ_FRAMEBUFFER, Some(swapchain.fbos[index as usize]));
             gl.bind_framebuffer(
                 glow::DRAW_FRAMEBUFFER,
+                #[cfg(feature = "surfman")]
                 match fbo {
                     0 => None,
                     other => Some(other),
                 },
+                #[cfg(not(feature = "surfman"))]
+                None,
             );
             gl.blit_framebuffer(
                 0,

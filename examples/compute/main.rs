@@ -21,7 +21,6 @@ use std::{fs, ptr, slice, str::FromStr};
 
 use hal::{adapter::MemoryType, buffer, command, memory, pool, prelude::*, pso};
 
-
 #[cfg(any(
     feature = "vulkan",
     feature = "dx11",
@@ -42,8 +41,8 @@ fn main() {
         .collect();
     let stride = std::mem::size_of::<u32>() as u64;
 
-    let instance = back::Instance::create("gfx-rs compute", 1)
-        .expect("Failed to create an instance!");
+    let instance =
+        back::Instance::create("gfx-rs compute", 1).expect("Failed to create an instance!");
 
     let adapter = instance
         .enumerate_adapters()
@@ -131,8 +130,14 @@ fn main() {
     };
 
     unsafe {
-        let mapping = device.map_memory(&staging_memory, 0 .. staging_size).unwrap();
-        ptr::copy_nonoverlapping(numbers.as_ptr() as *const u8, mapping, numbers.len() * stride as usize);
+        let mapping = device
+            .map_memory(&staging_memory, 0 .. staging_size)
+            .unwrap();
+        ptr::copy_nonoverlapping(
+            numbers.as_ptr() as *const u8,
+            mapping,
+            numbers.len() * stride as usize,
+        );
         device.unmap_memory(&staging_memory);
     }
 
@@ -218,7 +223,9 @@ fn main() {
     }
 
     unsafe {
-        let mapping = device.map_memory(&staging_memory, 0 .. staging_size).unwrap();
+        let mapping = device
+            .map_memory(&staging_memory, 0 .. staging_size)
+            .unwrap();
         println!(
             "Times: {:?}",
             slice::from_raw_parts::<u32>(mapping as *const u8 as *const u32, numbers.len()),

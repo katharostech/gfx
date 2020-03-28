@@ -255,6 +255,7 @@ impl Error {
     }
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 fn debug_message_callback(source: u32, gltype: u32, id: u32, severity: u32, message: &str) {
     let source_str = match source {
         glow::DEBUG_SOURCE_API => "API",

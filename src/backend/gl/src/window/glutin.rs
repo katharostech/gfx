@@ -182,7 +182,8 @@ impl hal::Instance<B> for Instance {
         match self {
             Instance::Headless(instance) => instance.create_surface(has_handle),
             Instance::Surface(instance) => instance.create_surface(has_handle),
-        }.expect("TODO");
+        }
+        .expect("TODO");
 
         match has_handle.raw_window_handle() {
             #[cfg(all(unix, not(target_os = "android"), not(target_os = "macos")))]
