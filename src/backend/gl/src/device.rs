@@ -1668,7 +1668,7 @@ impl d::Device<B> for Device {
         }
     }
 
-    #[cfg(target_arch = "wasm32")]
+    #[cfg(wasm)]
     unsafe fn wait_for_fences<I>(
         &self,
         fences: I,
@@ -1862,7 +1862,7 @@ impl d::Device<B> for Device {
 
         let gl = &self.share.context;
 
-        #[cfg(feature = "wgl")]
+        #[cfg(wgl)]
         let context = {
             use crate::window::wgl::PresentContext;
 
@@ -1927,16 +1927,16 @@ impl d::Device<B> for Device {
         }
 
         // Web
-        #[cfg(target_arch = "wasm32")]
+        #[cfg(wasm)]
         let _ = surface;
-        #[cfg(target_arch = "wasm32")]
+        #[cfg(wasm)]
         let swapchain = Swapchain {
             fbos,
             extent: config.extent,
         };
 
         // Glutin
-        #[cfg(feature = "glutin")]
+        #[cfg(glutin)]
         let swapchain = Swapchain {
             fbos,
             extent: config.extent,
@@ -1950,7 +1950,7 @@ impl d::Device<B> for Device {
         };
 
         // Surfman
-        #[cfg(feature = "surfman")]
+        #[cfg(surfman)]
         let swapchain = Swapchain {
             fbos,
             extent: config.extent,
@@ -1959,7 +1959,7 @@ impl d::Device<B> for Device {
         };
 
         // WGL
-        #[cfg(feature = "wgl")]
+        #[cfg(wgl)]
         let swapchain = {
             self.share.instance_context.make_current();
             Swapchain {
@@ -1970,12 +1970,7 @@ impl d::Device<B> for Device {
         };
 
         // Dummy
-        #[cfg(not(any(
-            target_arch = "wasm32",
-            feature = "glutin",
-            feature = "surfman",
-            feature = "wgl"
-        )))]
+        #[cfg(dummy)]
         let swapchain = Swapchain {
             extent: {
                 let _ = surface;

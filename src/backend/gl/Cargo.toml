@@ -17,9 +17,9 @@ build = "build.rs"
 name = "gfx_backend_gl"
 
 [features]
-default = []
+default = ["wgl", "surfman", "surfman-x11"]
 wgl = []
-x11 = ["surfman/x11"]
+surfman-x11 = ["surfman/x11"]
 
 [dependencies]
 arrayvec = "0.5"
@@ -72,3 +72,4 @@ winapi = { version = "0.3", features = ["libloaderapi", "windef", "wingdi", "win
 
 [build-dependencies]
 gl_generator = "0.11"
+cfg_aliases = "0.1.0-alpha.0"

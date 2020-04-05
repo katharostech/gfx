@@ -3,14 +3,9 @@
 
 #![allow(missing_docs, missing_copy_implementations)]
 
-// Check for incompatible feature combinations
-#[cfg(all(
-    target_arch = "wasm32",
-    any(feature = "glutin", feature = "surfman", feature = "wgl")
-))]
-compile_error!(
-    "The `glutin`, `surfman`, and `wgl` features are incompatible with the `wasm32` target."
-);
+// Check for incompatible feature flags
+#[cfg(all(surfman, glutin))]
+compile_error!("You cannot specify both `surfman` and `glutin` features at the same time.");
 
 #[macro_use]
 extern crate bitflags;
@@ -18,7 +13,7 @@ extern crate bitflags;
 extern crate log;
 extern crate gfx_hal as hal;
 
-#[cfg(feature = "surfman")]
+#[cfg(surfman)]
 use parking_lot::RwLock;
 
 use std::cell::Cell;
@@ -43,35 +38,30 @@ mod state;
 mod window;
 
 // Web implementation
-#[cfg(target_arch = "wasm32")]
+#[cfg(wasm)]
 pub use window::web::{Surface, Swapchain};
 
 // Glutin implementation
-#[cfg(feature = "glutin")]
+#[cfg(glutin)]
 pub use crate::window::glutin::{Instance, Surface, Swapchain};
 
 // Surfman implementation
-#[cfg(feature = "surfman")]
+#[cfg(surfman)]
 pub use crate::window::surfman::{Instance, Surface, Swapchain};
-#[cfg(feature = "surfman")]
+#[cfg(surfman)]
 use surfman::declare_surfman;
 // Helps windows detect discrete GPUs
-#[cfg(feature = "surfman")]
+#[cfg(surfman)]
 declare_surfman!();
 
 // WGL implementation
-#[cfg(feature = "wgl")]
+#[cfg(wgl)]
 use window::wgl::DeviceContext;
-#[cfg(feature = "wgl")]
+#[cfg(wgl)]
 pub use window::wgl::{Instance, Surface, Swapchain};
 
 // Catch-all dummy implementation
-#[cfg(not(any(
-    target_arch = "wasm32",
-    feature = "glutin",
-    feature = "surfman",
-    feature = "wgl"
-)))]
+#[cfg(dummy)]
 pub use window::dummy::{Surface, Swapchain};
 
 pub use glow::Context as GlContext;
@@ -82,22 +72,22 @@ type ColorSlot = u8;
 pub(crate) struct GlContainer {
     context: GlContext,
 
-    #[cfg(feature = "surfman")]
+    #[cfg(surfman)]
     surfman_device: Starc<RwLock<surfman::Device>>,
 
-    #[cfg(feature = "surfman")]
+    #[cfg(surfman)]
     surfman_context: Starc<RwLock<surfman::Context>>,
 }
 
 impl GlContainer {
-    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg(not(wasm))]
     fn make_current(&self) {
         // TODO:
         // NOTE: Beware, calling this on dereference breaks the surfman backend
         // I'm not sure if there would be similar concequences with other backends.
     }
 
-    #[cfg(any(feature = "glutin", feature = "wgl"))]
+    #[cfg(any(glutin, wgl))]
     fn from_fn_proc<F>(fn_proc: F) -> GlContainer
     where
         F: FnMut(&str) -> *const std::os::raw::c_void,
@@ -106,7 +96,7 @@ impl GlContainer {
         GlContainer { context }
     }
 
-    #[cfg(feature = "surfman")]
+    #[cfg(surfman)]
     fn from_fn_proc<F>(
         fn_proc: F,
         surfman_device: Starc<RwLock<surfman::Device>>,
@@ -123,7 +113,7 @@ impl GlContainer {
         }
     }
 
-    #[cfg(target_arch = "wasm32")]
+    #[cfg(wasm)]
     fn from_canvas(canvas: &web_sys::HtmlCanvasElement) -> GlContainer {
         let context = {
             use wasm_bindgen::JsCast;
@@ -155,13 +145,13 @@ impl GlContainer {
 impl Deref for GlContainer {
     type Target = GlContext;
     fn deref(&self) -> &GlContext {
-        #[cfg(not(target_arch = "wasm32"))]
+        #[cfg(not(wasm))]
         self.make_current();
         &self.context
     }
 }
 
-#[cfg(feature = "surfman")]
+#[cfg(surfman)]
 impl Drop for GlContainer {
     fn drop(&mut self) {
         // Contexts must be manually destroyed to prevent a panic
@@ -176,21 +166,13 @@ impl Drop for GlContainer {
 pub enum Backend {}
 
 impl hal::Backend for Backend {
-    #[cfg(all(
-        not(target_arch = "wasm32"),
-        any(feature = "glutin", feature = "surfman", feature = "wgl")
-    ))]
+    #[cfg(not(any(wasm, dummy)))]
     type Instance = Instance;
 
-    #[cfg(target_arch = "wasm32")]
+    #[cfg(wasm)]
     type Instance = Surface;
 
-    #[cfg(not(any(
-        target_arch = "wasm32",
-        feature = "glutin",
-        feature = "surfman",
-        feature = "wgl"
-    )))]
+    #[cfg(dummy)]
     type Instance = DummyInstance;
 
     type PhysicalDevice = PhysicalDevice;
@@ -255,7 +237,7 @@ impl Error {
     }
 }
 
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(not(wasm))]
 fn debug_message_callback(source: u32, gltype: u32, id: u32, severity: u32, message: &str) {
     let source_str = match source {
         glow::DEBUG_SOURCE_API => "API",
@@ -469,7 +451,7 @@ unsafe impl<T: ?Sized> Sync for Wstarc<T> {}
 #[derive(Debug)]
 pub struct PhysicalDevice(Starc<Share>);
 
-#[cfg(not(feature = "wgl"))]
+#[cfg(not(wgl))]
 type DeviceContext = ();
 
 impl PhysicalDevice {
@@ -665,7 +647,7 @@ impl adapter::PhysicalDevice<Backend> for PhysicalDevice {
         // initialize permanent states
         let gl = &self.0.context;
 
-        #[cfg(not(target_arch = "wasm32"))]
+        #[cfg(not(wasm))]
         {
             if cfg!(debug_assertions) && gl.supports_debug() {
                 gl.enable(glow::DEBUG_OUTPUT);
@@ -780,20 +762,10 @@ impl q::QueueFamily for QueueFamily {
     }
 }
 
-#[cfg(not(any(
-    target_arch = "wasm32",
-    feature = "glutin",
-    feature = "surfman",
-    feature = "wgl"
-)))]
+#[cfg(dummy)]
 pub struct DummyInstance;
 
-#[cfg(not(any(
-    target_arch = "wasm32",
-    feature = "glutin",
-    feature = "surfman",
-    feature = "wgl"
-)))]
+#[cfg(dummy)]
 impl hal::Instance<Backend> for DummyInstance {
     fn create(_: &str, _: u32) -> Result<Self, hal::UnsupportedBackend> {
         unimplemented!()

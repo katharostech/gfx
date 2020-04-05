@@ -82,7 +82,6 @@ impl window::Swapchain<B> for Swapchain {
     }
 }
 
-#[cfg(not(target_arch = "wasm32"))]
 #[derive(Debug)]
 pub enum Instance {
     Headless(Headless),
@@ -160,7 +159,6 @@ impl Instance {
     }
 }
 
-#[cfg(not(target_arch = "wasm32"))]
 impl hal::Instance<B> for Instance {
     fn create(name: &str, version: u32) -> Result<Instance, hal::UnsupportedBackend> {
         Headless::create(name, version).map(Instance::Headless)
@@ -186,16 +184,11 @@ impl hal::Instance<B> for Instance {
         .expect("TODO");
 
         match has_handle.raw_window_handle() {
-            #[cfg(all(unix, not(target_os = "android"), not(target_os = "macos")))]
+            #[cfg(all(unix, not(android), not(macos)))]
             RawWindowHandle::Wayland(handle) => {
                 Ok(self.create_surface_from_wayland(handle.display, handle.surface))
             }
-            #[cfg(all(
-                feature = "x11",
-                unix,
-                not(target_os = "android"),
-                not(target_os = "macos")
-            ))]
+            #[cfg(all(unix, not(android), not(macos)))]
             RawWindowHandle::Xlib(handle) => {
                 Ok(self.create_surface_from_xlib(handle.display as *mut _, handle.window))
             }
@@ -326,15 +319,15 @@ impl window::Surface<B> for Surface {
             present_modes: window::PresentMode::FIFO, //TODO
             composite_alpha_modes: window::CompositeAlphaMode::OPAQUE, //TODO
             image_count: if self.context.get_pixel_format().double_buffer {
-                2 ..= 2
+                2..=2
             } else {
-                1 ..= 1
+                1..=1
             },
             current_extent: None,
             extents: window::Extent2D {
                 width: 4,
                 height: 4,
-            } ..= window::Extent2D {
+            }..=window::Extent2D {
                 width: 4096,
                 height: 4096,
             },
@@ -408,7 +401,7 @@ impl Headless {
 impl hal::Instance<B> for Headless {
     fn create(_: &str, _: u32) -> Result<Self, hal::UnsupportedBackend> {
         let context: glutin::Context<glutin::NotCurrent>;
-        #[cfg(target_os = "linux")]
+        #[cfg(linux)]
         {
             /// TODO: Update portability to make this more flexible
             use glutin::platform::unix::HeadlessContextExt;
@@ -419,7 +412,7 @@ impl hal::Instance<B> for Headless {
                 hal::UnsupportedBackend
             })?;
         }
-        #[cfg(not(target_os = "linux"))]
+        #[cfg(not(linux))]
         {
             context = unimplemented!();
         }

@@ -201,17 +201,17 @@ impl CommandQueue {
         let gl = &self.share.context;
         let extent = swapchain.extent;
 
-        #[cfg(feature = "wgl")]
+        #[cfg(wgl)]
         swapchain.make_current();
 
-        #[cfg(feature = "surfman")]
+        #[cfg(surfman)]
         gl.surfman_device
             .write()
             .make_context_current(&swapchain.context.read())
             .unwrap();
 
         // Use the framebuffer from the surfman context
-        #[cfg(feature = "surfman")]
+        #[cfg(surfman)]
         let fbo = gl
             .surfman_device
             .read()
@@ -224,12 +224,12 @@ impl CommandQueue {
             gl.bind_framebuffer(glow::READ_FRAMEBUFFER, Some(swapchain.fbos[index as usize]));
             gl.bind_framebuffer(
                 glow::DRAW_FRAMEBUFFER,
-                #[cfg(feature = "surfman")]
+                #[cfg(surfman)]
                 match fbo {
                     0 => None,
                     other => Some(other),
                 },
-                #[cfg(not(feature = "surfman"))]
+                #[cfg(not(surfman))]
                 None,
             );
             gl.blit_framebuffer(
@@ -247,7 +247,7 @@ impl CommandQueue {
         }
 
         // Present the surfman surface
-        #[cfg(feature = "surfman")]
+        #[cfg(surfman)]
         {
             let mut surface = gl
                 .surfman_device
@@ -265,10 +265,10 @@ impl CommandQueue {
                 .expect("TODO")
         }
 
-        #[cfg(feature = "glutin")]
+        #[cfg(glutin)]
         swapchain.context.swap_buffers().unwrap();
 
-        #[cfg(feature = "wgl")]
+        #[cfg(wgl)]
         swapchain.swap_buffers();
     }
 
@@ -1178,7 +1178,7 @@ impl hal::queue::CommandQueue<Backend> for CommandQueue {
             self.present_by_copy(swapchain.borrow(), index);
         }
 
-        #[cfg(feature = "wgl")]
+        #[cfg(wgl)]
         self.share.instance_context.make_current();
 
         Ok(None)
@@ -1196,7 +1196,7 @@ impl hal::queue::CommandQueue<Backend> for CommandQueue {
             .expect("No swapchain is configured!");
         self.present_by_copy(swapchain, 0);
 
-        #[cfg(feature = "wgl")]
+        #[cfg(wgl)]
         self.share.instance_context.make_current();
 
         Ok(None)
