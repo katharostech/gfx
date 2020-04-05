@@ -8,10 +8,7 @@ edition = "2018"
 [features]
 default = ["debug-assertions"]
 metal = ["gfx-backend-metal"]
-gl = ["gfx-backend-gl", "gfx-backend-gl/surfman"] # GL for Unix
-x11 = ["gfx-backend-gl/x11"]
-webgl = ["gfx-backend-gl"] # GL for web
-wgl = ["gfx-backend-gl", "gfx-backend-gl/wgl"] # GL for Windows
+gl = ["gfx-backend-gl"]
 dx11 = ["gfx-backend-dx11"]
 dx12 = ["gfx-backend-dx12"]
 vulkan = ["gfx-backend-vulkan"]

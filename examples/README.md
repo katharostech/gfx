@@ -27,7 +27,7 @@ cd .. # Move up to the parent directory of the gfx repository
 git clone https://github.com/grovesNL/spirv_cross # Clone spirv_cross locally
 cargo install wasm-bindgen-cli # Install the command line interface (CLI) for wasm-bindgen
 cd examples # Set the working directory to examples (in the gfx repository)
-cargo +nightly build --target wasm32-unknown-unknown --features webgl --bin quad # Build quad as wasm
+cargo +nightly build --target wasm32-unknown-unknown --features gl --bin quad # Build quad as wasm
 ```
 
 At this point, some crates may fail to build. If they do not build correctly, you may need to update your packages locally by removing your existing Cargo.lock and cleaning your target directory, or forcing certain packages to be updated (i.e. `cargo update -p package-name --precise x.y.z`).
